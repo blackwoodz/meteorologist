@@ -61,7 +61,7 @@ task :grade do # if needed in the future, add => :environment
 
   if options[:verbose]
     puts
-    puts "#{header_outline_counter}. READ PERSONAL/PROJECT SETTINGS".header_format
+    puts "#{header_outline_counter}. READ PERSONAL/PROJECT SETTINGS"#.header_format
     header_outline_counter = header_outline_counter.next
     puts "- Personal access token: #{personal_access_token} [#{student_token_filename_base}]"
     puts "- Project token: #{project_token} [#{config_file_name_base}]"
@@ -69,15 +69,15 @@ task :grade do # if needed in the future, add => :environment
   end
 
   puts
-  puts "#{header_outline_counter}. RUN TESTS".header_format
+  puts "#{header_outline_counter}. RUN TESTS"#.header_format
   header_outline_counter = header_outline_counter.next
   rspec_output_string_json = `bundle exec rspec --order default --format json`
   rspec_output_json = JSON.parse(rspec_output_string_json)
-  puts "- #{rspec_output_json["summary_line"]}".result_format
+  puts "- #{rspec_output_json["summary_line"]}"#.result_format
   puts "- For detailed results: run 'rake grade --verbose' or 'rake grade -v'" if !options[:verbose]
 
   puts
-  puts "#{header_outline_counter}. SUBMIT RESULTS".header_format
+  puts "#{header_outline_counter}. SUBMIT RESULTS"#.header_format
   header_outline_counter = header_outline_counter.next
   data = {
     project_token: project_token,
@@ -99,6 +99,15 @@ task :grade do # if needed in the future, add => :environment
     }
   }
 
+  # TEMPORARY Windows fixes
+  # 1. SSL issues leading to submissions errors
+  # 2. Fix 1: do not use SSL for now when communicating with grades.firstdraft.com
+  # 3. Fix 2 (minor): do not open results URL automatically (command used does not work in Windows shell)
+  # 4. Fix 3 (minor): no formatting (as written, does not work reliably in Windows)
+
+  # TEMP Windows fix
+  submission_url = submission_url.sub("https", "http")
+
   uri = URI(submission_url)
   begin
     use_ssl = uri.scheme == "https" ? true : false
@@ -111,29 +120,29 @@ task :grade do # if needed in the future, add => :environment
     # see http://stackoverflow.com/questions/5370697/what-s-the-best-way-to-handle-exceptions-from-nethttp
     network_error_msg_base = "NETWORK ERROR: the submission to #{submission_url} didn't work.  Possible causes: (a) your internet connection or (b) the grading server.  For (b), try submitting again, and if that doesn't work, try again after some time -- and if that still doesn't work, let your instructor know :)"
     if options[:verbose]
-      abort("#{network_error_msg_base}  \n\nTechnical error message that may or may not be helpful: #{e.inspect}\n".error_format)
+      abort("#{network_error_msg_base}  \n\nTechnical error message that may or may not be helpful: #{e.inspect}\n") #.error_format
     else
-      abort("#{network_error_msg_base}  For a technical error message that may or may not be helpful, run 'rake grade --verbose' or 'rake grade -v'.\n".error_format)
+      abort("#{network_error_msg_base}  For a technical error message that may or may not be helpful, run 'rake grade --verbose' or 'rake grade -v'.\n") #.error_format
     end
   end
   if res.kind_of? Net::HTTPCreated
     results_url = JSON.parse(res.body)["url"]
-    puts "- Done! Results URL: ".result_format + "#{results_url}".link_format.result_format
+    puts "- Done! Results URL: " + "#{results_url}" # puts "- Done! Results URL: ".result_format + "#{results_url}".link_format.result_format
     puts
     if options[:verbose]
-      puts "#{header_outline_counter}. DETAILED TEST RESULTS".header_format
+      puts "#{header_outline_counter}. DETAILED TEST RESULTS"#.header_format
       header_outline_counter = header_outline_counter.next
       rspec_output_string_doc = `bundle exec rspec --order default --format documentation --color --tty` # "--require spec_helper"?
       puts rspec_output_string_doc
     else
-      `open #{results_url}`
+      # `open #{results_url}` # FIX for Windows
     end
   elsif res.kind_of? Net::HTTPUnprocessableEntity
-    puts "- ERROR: #{res.body}".error_format
+    puts "- ERROR: #{res.body}"#.error_format
     puts
   # elsif res.kind_of? Net::HTTPInternalServerError
   else
-    puts "- ERROR: #{res.inspect}, #{res.body}".error_format
+    puts "- ERROR: #{res.inspect}, #{res.body}"#.error_format
     puts
   end
 
@@ -179,37 +188,37 @@ def run_checksum(f_path, f_is_folder)
   return md5.hexdigest
 end
 
-# Taken from: http://stackoverflow.com/questions/1489183/colorized-ruby-output
-class String
-  def black;          "\e[30m#{self}\e[0m"      end
-  def red;            "\e[31m#{self}\e[0m"      end
-  def green;          "\e[32m#{self}\e[0m"      end
-  def brown;          "\e[33m#{self}\e[0m"      end
-  def blue;           "\e[34m#{self}\e[0m"      end
-  def magenta;        "\e[35m#{self}\e[0m"      end
-  def cyan;           "\e[36m#{self}\e[0m"      end
-  def gray;           "\e[37m#{self}\e[0m"      end
+# # Taken from: http://stackoverflow.com/questions/1489183/colorized-ruby-output
+# class String
+#   def black;          "\e[30m#{self}\e[0m"      end
+#   def red;            "\e[31m#{self}\e[0m"      end
+#   def green;          "\e[32m#{self}\e[0m"      end
+#   def brown;          "\e[33m#{self}\e[0m"      end
+#   def blue;           "\e[34m#{self}\e[0m"      end
+#   def magenta;        "\e[35m#{self}\e[0m"      end
+#   def cyan;           "\e[36m#{self}\e[0m"      end
+#   def gray;           "\e[37m#{self}\e[0m"      end
 
-  def bg_black;       "\e[40m#{self}\e[0m"      end
-  def bg_red;         "\e[41m#{self}\e[0m"      end
-  def bg_green;       "\e[42m#{self}\e[0m"      end
-  def bg_brown;       "\e[43m#{self}\e[0m"      end
-  def bg_blue;        "\e[44m#{self}\e[0m"      end
-  def bg_magenta;     "\e[45m#{self}\e[0m"      end
-  def bg_cyan;        "\e[46m#{self}\e[0m"      end
-  def bg_gray;        "\e[47m#{self}\e[0m"      end
+#   def bg_black;       "\e[40m#{self}\e[0m"      end
+#   def bg_red;         "\e[41m#{self}\e[0m"      end
+#   def bg_green;       "\e[42m#{self}\e[0m"      end
+#   def bg_brown;       "\e[43m#{self}\e[0m"      end
+#   def bg_blue;        "\e[44m#{self}\e[0m"      end
+#   def bg_magenta;     "\e[45m#{self}\e[0m"      end
+#   def bg_cyan;        "\e[46m#{self}\e[0m"      end
+#   def bg_gray;        "\e[47m#{self}\e[0m"      end
 
-  def bold;           "\e[1m#{self}\e[22m"      end
-  def italic;         "\e[3m#{self}\e[23m"      end
-  def underline;      "\e[4m#{self}\e[24m"      end
-  def blink;          "\e[5m#{self}\e[25m"      end
-  def reverse_color;  "\e[7m#{self}\e[27m"      end
+#   def bold;           "\e[1m#{self}\e[22m"      end
+#   def italic;         "\e[3m#{self}\e[23m"      end
+#   def underline;      "\e[4m#{self}\e[24m"      end
+#   def blink;          "\e[5m#{self}\e[25m"      end
+#   def reverse_color;  "\e[7m#{self}\e[27m"      end
 
-  def no_colors;      self.gsub /\e\[\d+m/, ""  end
+#   def no_colors;      self.gsub /\e\[\d+m/, ""  end
 
-  # Specific formatting for 'rake grade'
-  def header_format;  self.underline            end
-  def result_format;  self.bold                 end
-  def link_format;    self                      end
-  def error_format;   self.bg_red.bold          end
-end
+#   # Specific formatting for 'rake grade'
+#   def header_format;  self.underline            end
+#   def result_format;  self.bold                 end
+#   def link_format;    self                      end
+#   def error_format;   self.bg_red.bold          end
+# end
